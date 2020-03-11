@@ -1,0 +1,58 @@
+name: Build and attach assets
+on:
+  push:
+    branches-ignore:
+      - '**'
+jobs:
+  build-linux:
+    name: Linux - Build1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Build1
+        shell: bash
+        run: |
+          chmod -R 755 *
+
+          export MODULE_VERSION_A="$(echo | cat $GITHUB_WORKSPACE/.version)"
+
+          echo ${MODULE_VERSION_A}
+      - name: Build2
+        shell: bash
+        run: |
+          echo ${MODULE_VERSION_A}
+
+          echo "${MODULE_VERSION_A}"
+
+      - name: Install
+        shell: bash
+        run: |
+          sudo apt install -y gcc g++ gcc-multilib g++-multilib
+      - name: Build
+        shell: bash
+        run: |
+          chmod -R 755 *
+          
+          echo ${MODULE_VERSION_A}
+          export MODULE_VERSION_A="$(echo | cat $GITHUB_WORKSPACE/.version)"
+          ./Compile.sh ${MODULE_VERSION_A}
+
+          mkdir $GITHUB_WORKSPACE/Release/addons/amxmodx/modules/
+
+          mv $GITHUB_WORKSPACE/buttonsmanager_amxx_i386.so $GITHUB_WORKSPACE/Release/addons/amxmodx/modules/buttonsmanager_amxx_i386.so
+
+          tar -zcvf buttonsmanager.tar.gz Release
+    
+      - name: "Get upload_url"
+        run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"  
+        id: release
+
+      - name: "Upload Release Asset"
+        uses: "actions/upload-release-asset@master"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }} 
+          asset_path: ./buttonsmanager.tar.gz
+          asset_name: buttonsmanager.tar.gz
+          asset_content_type: application/tar+gzip
